@@ -205,7 +205,7 @@ class OffRoadValidatorTest {
   }
 
   @Test
-  void testValidUMethodSubSourceShouldNotRequireAdBlue() {
+  void testValidPowerBasedSubSourceShouldNotRequireAdBlue() {
     when(validationHelper.getPowerRange(any())).thenReturn(Optional.of(IntRangeUtil.valueOf("[67,420]")));
     final OffRoadMobileEmissionSource source = createSource(200, null, 1_337, null);
 

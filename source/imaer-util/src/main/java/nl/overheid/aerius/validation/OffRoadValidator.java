@@ -66,27 +66,27 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
   private boolean validateOffRoadProperties(final StandardOffRoadMobileSource subSource) {
     // Combine all validations in separate statements to make sure each validation is run to collect all validation warnings/errors.
     final boolean usesUMethod = subSource.getPower() != null && subSource.getPower() > 0;
-    boolean valid = usesUMethod ? validateUMethod(subSource) : validateAUBMethod(subSource);
+    boolean valid = usesUMethod ? validatePowerBased(subSource) : validateFuelBased(subSource);
     valid = validateOffRoadPowerRange(subSource) && valid;
     valid = validateOffRoadOperatingHours(subSource) && valid;
     validateOffRoadLiterAdBlue(subSource);
     return valid;
   }
 
-  private boolean validateUMethod(final StandardOffRoadMobileSource subSource) {
+  private boolean validatePowerBased(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
     final String code = subSource.getOffRoadMobileSourceCode();
     if (!validationHelper.expectsPower(code)) {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
       valid = false;
     }
-    // Unused in U-method; Set to null
+    // Unused for power based; Set to null
     subSource.setLiterFuelPerYear(null);
     subSource.setLiterAdBluePerYear(null);
     return valid;
   }
 
-  private boolean validateAUBMethod(final StandardOffRoadMobileSource subSource) {
+  private boolean validateFuelBased(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
     final String code = subSource.getOffRoadMobileSourceCode();
     final boolean expectsPower = validationHelper.expectsPower(code);
@@ -135,7 +135,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
   }
 
   private void validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
-    // No need for null check, as validateAUBMethod() handles that if required
+    // No need for null check, as validateFuelBased() handles that if required
     if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
       subSource.setLiterAdBluePerYear(null);
     } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterFuelPerYear() != null
