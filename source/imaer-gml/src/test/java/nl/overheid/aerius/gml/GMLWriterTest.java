@@ -55,6 +55,8 @@ import nl.overheid.aerius.shared.domain.v2.point.SubPoint;
 import nl.overheid.aerius.shared.domain.v2.scenario.ScenarioMetaData;
 import nl.overheid.aerius.shared.domain.v2.source.EmissionSourceFeature;
 import nl.overheid.aerius.shared.domain.v2.source.GenericEmissionSource;
+import nl.overheid.aerius.shared.domain.v2.source.OffRoadMobileEmissionSource;
+import nl.overheid.aerius.shared.domain.v2.source.offroad.StandardOffRoadMobileSource;
 import nl.overheid.aerius.shared.exception.AeriusException;
 import nl.overheid.aerius.test.GMLTestDomain;
 
@@ -86,6 +88,10 @@ class GMLWriterTest {
   private static final String SITUATION_REFERENCE = "SomeReference001";
   private static final SituationType SITUATION_TYPE = SituationType.PROPOSED;
 
+  private static final String IMAER_POWER = "<imaer:power>";
+  private static final String IMAER_LITER_FUEL_PER_YEAR = "<imaer:literFuelPerYear>";
+  private static final String IMAER_LITER_AD_BLUE_PER_YEAR = "<imaer:literAdBluePerYear>";
+
   @ParameterizedTest
   @ValueSource(strings = {SOURCES_ONLY_FILE, SOURCES_ONLY_FILE_UNFORMATTED})
   void testConvertSources(final String gmlFilename) throws IOException, AeriusException {
@@ -102,6 +108,42 @@ class GMLWriterTest {
       builder.writeEmissionSources(bos, sources, getMetaDataInput(getScenarioMetaData()));
       return bos.toString(StandardCharsets.UTF_8.name());
     }
+  }
+
+  @Test
+  void testConvertOffRoadUMethodOmitsFuelAndAdBlue() throws IOException, AeriusException {
+    final String result = convertOffRoadSource(offRoadSubSource(120, 50, 200, 10));
+    assertTrue(result.contains(getExpectedElement(IMAER_POWER, "120")), "U method should write power");
+    assertFalse(result.contains(IMAER_LITER_FUEL_PER_YEAR), "U method should not write literFuelPerYear");
+    assertFalse(result.contains(IMAER_LITER_AD_BLUE_PER_YEAR), "U method should not write literAdBluePerYear");
+  }
+
+  @Test
+  void testConvertOffRoadAubMethodOmitsPower() throws IOException, AeriusException {
+    final String result = convertOffRoadSource(offRoadSubSource(0, 30, 100, 5));
+    assertFalse(result.contains(IMAER_POWER), "AUB method should not write power");
+    assertTrue(result.contains(getExpectedElement(IMAER_LITER_FUEL_PER_YEAR, "30")), "AUB method should write literFuelPerYear");
+    assertTrue(result.contains(getExpectedElement(IMAER_LITER_AD_BLUE_PER_YEAR, "5")), "AUB method should write literAdBluePerYear");
+  }
+
+  private String convertOffRoadSource(final StandardOffRoadMobileSource subSource) throws IOException, AeriusException {
+    final OffRoadMobileEmissionSource offRoad = new OffRoadMobileEmissionSource();
+    offRoad.getSubSources().add(subSource);
+    offRoad.getEmissions().put(Substance.NOX, 1.0);
+    final EmissionSourceFeature feature = GMLTestDomain.getSource(1, new Point(XCOORD_1, YCOORD_1), "OffRoad", offRoad);
+    final GMLWriter builder = new GMLWriter(ReceptorGridSettings.NL, GMLTestDomain.TEST_REFERENCE_GENERATOR);
+    return getConversionResult(builder, List.of(feature));
+  }
+
+  private StandardOffRoadMobileSource offRoadSubSource(final int power, final int literFuel, final int operatingHours, final int literAdBlue) {
+    final StandardOffRoadMobileSource subSource = new StandardOffRoadMobileSource();
+    subSource.setOffRoadMobileSourceCode("SI56DSN");
+    subSource.setDescription("test");
+    subSource.setPower(power);
+    subSource.setLiterFuelPerYear(literFuel);
+    subSource.setOperatingHoursPerYear(operatingHours);
+    subSource.setLiterAdBluePerYear(literAdBlue);
+    return subSource;
   }
 
   @Test
