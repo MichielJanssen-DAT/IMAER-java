@@ -204,6 +204,15 @@ class OffRoadValidatorTest {
         warnings.get(0));
   }
 
+  @Test
+  void testValidUMethodSubSourceShouldNotRequireAdBlue() {
+    when(validationHelper.getPowerRange(any())).thenReturn(Optional.of(IntRangeUtil.valueOf("[67,420]")));
+    final OffRoadMobileEmissionSource source = createSource(200, null, 1_337, null);
+
+    mockCategory(MockCategory.POWER, MockCategory.HOURS, MockCategory.ADBLUE);
+    assertNoErrorsOrWarnings(source);
+  }
+
   private static OffRoadMobileEmissionSource createSource(final Integer power, final Integer fuel, final Integer hours, final Integer adBlue) {
     final OffRoadMobileEmissionSource source = new OffRoadMobileEmissionSource();
     final StandardOffRoadMobileSource subSource = new StandardOffRoadMobileSource();

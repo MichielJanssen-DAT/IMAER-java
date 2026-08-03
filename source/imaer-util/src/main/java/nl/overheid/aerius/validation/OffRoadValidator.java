@@ -120,7 +120,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
 
   private boolean validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
-    if (validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode())) {
+    if (validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode()) && !usesUMethod(subSource)) {
       if (subSource.getLiterAdBluePerYear() == null) {
         getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
         valid = false;
@@ -131,6 +131,10 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
       subSource.setLiterAdBluePerYear(null);
     }
     return valid;
+  }
+
+  private boolean usesUMethod(final StandardOffRoadMobileSource subSource) {
+    return subSource.getPower() != null && subSource.getPower() > 0;
   }
 
   private void validateAdBlueFuelRatio(final StandardOffRoadMobileSource subSource) {
