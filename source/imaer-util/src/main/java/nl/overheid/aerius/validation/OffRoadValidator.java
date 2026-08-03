@@ -135,6 +135,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
   }
 
   private void validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
+    // No need for null check, as validateAUBMethod() handles that if required
     if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
       subSource.setLiterAdBluePerYear(null);
     } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterFuelPerYear() != null
