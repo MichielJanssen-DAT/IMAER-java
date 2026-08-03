@@ -178,7 +178,7 @@ class GMLWriterTest {
     return metaDataInput;
   }
 
-  private CalculationSetOptions getCalculationOptions() {
+  private static CalculationSetOptions getCalculationOptions() {
     final CalculationSetOptions options = new CalculationSetOptions();
     options.setCalculationMethod(CalculationMethod.NATURE_AREA);
     options.setMaximumRangeRelevant(true);
