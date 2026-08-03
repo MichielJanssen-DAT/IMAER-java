@@ -65,29 +65,45 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
 
   private boolean validateOffRoadProperties(final StandardOffRoadMobileSource subSource) {
     // Combine all validations in separate statements to make sure each validation is run to collect all validation warnings/errors.
-    boolean valid = validatePowerOrLiterFuel(subSource);
+    final boolean usesUMethod = subSource.getPower() != null && subSource.getPower() > 0;
+    boolean valid = usesUMethod ? validateUMethod(subSource) : validateAUBMethod(subSource);
     valid = validateOffRoadPowerRange(subSource) && valid;
     valid = validateOffRoadOperatingHours(subSource) && valid;
-    return validateOffRoadLiterAdBlue(subSource) && valid;
+    validateOffRoadLiterAdBlue(subSource);
+    return valid;
   }
 
-  private boolean validatePowerOrLiterFuel(final StandardOffRoadMobileSource subSource) {
+  private boolean validateUMethod(final StandardOffRoadMobileSource subSource) {
+    boolean valid = true;
+    final String code = subSource.getOffRoadMobileSourceCode();
+    if (!validationHelper.expectsPower(code)) {
+      getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
+      valid = false;
+    }
+    // Fuel and AdBlue belong to the AUB method and are not used when the U-method (power) is applied.
+    subSource.setLiterFuelPerYear(null);
+    subSource.setLiterAdBluePerYear(null);
+    return valid;
+  }
+
+  private boolean validateAUBMethod(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
     final String code = subSource.getOffRoadMobileSourceCode();
     final boolean expectsPower = validationHelper.expectsPower(code);
     final boolean expectsFuel = validationHelper.expectsLiterFuelPerYear(code);
-    final boolean noPowerButExpected = expectsPower && subSource.getPower() == null;
-    final boolean noFuelButExpected = expectsFuel && subSource.getLiterFuelPerYear() == null;
 
-    if ((noPowerButExpected && noFuelButExpected) || (noPowerButExpected && !expectsFuel) || (noFuelButExpected && !expectsPower)) {
+    subSource.setPower(null);
+    // No power supplied: fail when fuel is required but missing, or the category only supports the U-method.
+    if ((expectsFuel && subSource.getLiterFuelPerYear() == null) || (expectsPower && !expectsFuel)) {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
       valid = false;
     }
-    if (!expectsPower) {
-      subSource.setPower(null);
-    }
     if (!expectsFuel) {
       subSource.setLiterFuelPerYear(null);
+    }
+    if (validationHelper.expectsLiterAdBluePerYear(code) && subSource.getLiterAdBluePerYear() == null) {
+      getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
+      valid = false;
     }
     return valid;
   }
@@ -118,23 +134,13 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     return valid;
   }
 
-  private boolean validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
-    boolean valid = true;
-    if (validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode()) && !usesUMethod(subSource)) {
-      if (subSource.getLiterAdBluePerYear() == null) {
-        getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
-        valid = false;
-      } else if (subSource.getLiterFuelPerYear() != null) {
-        validateAdBlueFuelRatio(subSource);
-      }
-    } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
+  private void validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
+    if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
       subSource.setLiterAdBluePerYear(null);
+    } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterFuelPerYear() != null
+        && validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode())) {
+      validateAdBlueFuelRatio(subSource);
     }
-    return valid;
-  }
-
-  private boolean usesUMethod(final StandardOffRoadMobileSource subSource) {
-    return subSource.getPower() != null && subSource.getPower() > 0;
   }
 
   private void validateAdBlueFuelRatio(final StandardOffRoadMobileSource subSource) {

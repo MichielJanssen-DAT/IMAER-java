@@ -232,9 +232,9 @@ class OffRoadValidatorTest {
     final Set<MockCategory> mockCategoriesSet = Set.of(mockCategories);
     when(validationHelper.isValidOffRoadMobileSourceCode(CODE)).thenReturn(true);
     when(validationHelper.expectsPower(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.POWER));
-    when(validationHelper.expectsLiterFuelPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.FUEL));
     when(validationHelper.expectsOperatingHoursPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.HOURS));
-    when(validationHelper.expectsLiterAdBluePerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.ADBLUE));
+    lenient().when(validationHelper.expectsLiterFuelPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.FUEL));
+    lenient().when(validationHelper.expectsLiterAdBluePerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.ADBLUE));
     lenient().when(validationHelper.getMaxAdBlueFuelRatio(CODE)).thenReturn(OptionalDouble.of(0.07));
   }
 
