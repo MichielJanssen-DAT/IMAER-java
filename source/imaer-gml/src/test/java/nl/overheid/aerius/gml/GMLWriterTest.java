@@ -97,7 +97,7 @@ class GMLWriterTest {
     AssertGML.assertEqualsGML(AssertGML.getFileContent(PATH_CURRENT_VERSION, gmlFilename), result, gmlFilename);
   }
 
-  String getConversionResult(final GMLWriter builder, final List<EmissionSourceFeature> sources) throws IOException, AeriusException {
+  static String getConversionResult(final GMLWriter builder, final List<EmissionSourceFeature> sources) throws IOException, AeriusException {
     try (ByteArrayOutputStream bos = new ByteArrayOutputStream()) {
       builder.writeEmissionSources(bos, sources, getMetaDataInput(getScenarioMetaData()));
       return bos.toString(StandardCharsets.UTF_8.name());
@@ -158,11 +158,11 @@ class GMLWriterTest {
     assertTrue(result.contains("<imaer:reference>"), "Should contain reference tag");
   }
 
-  String getExpectedElement(final String element, final String value) {
+  static String getExpectedElement(final String element, final String value) {
     return "<imaer:" + element + ">" + value + "</imaer:" + element + ">";
   }
 
-  private MetaDataInput getMetaDataInput(final ScenarioMetaData scenarioMetaData) {
+  private static MetaDataInput getMetaDataInput(final ScenarioMetaData scenarioMetaData) {
     final MetaDataInput metaDataInput = new MetaDataInput();
     metaDataInput.setScenarioMetaData(scenarioMetaData);
     metaDataInput.setYear(GML_YEAR);
@@ -385,7 +385,7 @@ class GMLWriterTest {
     AssertGML.assertEqualsGML(AssertGML.getFileContent(PATH_CURRENT_VERSION, MIXED_FEATURES_FILE), result, MIXED_FEATURES_FILE);
   }
 
-  private ScenarioMetaData getScenarioMetaData() {
+  private static ScenarioMetaData getScenarioMetaData() {
     final ScenarioMetaData metaData = new ScenarioMetaData();
     metaData.setCorporation("Big Corp");
     metaData.setProjectName("SomeProject");
