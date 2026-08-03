@@ -80,7 +80,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
       valid = false;
     }
-    // Fuel and AdBlue belong to the AUB method and are not used when the U-method (power) is applied.
+    // Unused in U-method; Set to null
     subSource.setLiterFuelPerYear(null);
     subSource.setLiterAdBluePerYear(null);
     return valid;
@@ -92,8 +92,6 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     final boolean expectsPower = validationHelper.expectsPower(code);
     final boolean expectsFuel = validationHelper.expectsLiterFuelPerYear(code);
 
-    subSource.setPower(null);
-    // No power supplied: fail when fuel is required but missing, or the category only supports the U-method.
     if ((expectsFuel && subSource.getLiterFuelPerYear() == null) || (expectsPower && !expectsFuel)) {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
       valid = false;
@@ -105,6 +103,8 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
       valid = false;
     }
+    // Fallback if custom GML is passed with power = 0
+    subSource.setPower(null);
     return valid;
   }
 
