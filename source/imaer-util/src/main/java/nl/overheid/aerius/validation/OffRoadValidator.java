@@ -67,23 +67,18 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     // Combine all validations in separate statements to make sure each validation is run to collect all validation warnings/errors.
     final boolean usesUMethod = subSource.getPower() != null && subSource.getPower() > 0;
     boolean valid = usesUMethod ? validatePowerBased(subSource) : validateFuelBased(subSource);
-    valid = validateOffRoadPowerRange(subSource) && valid;
     valid = validateOffRoadOperatingHours(subSource) && valid;
-    validateOffRoadLiterAdBlue(subSource);
     return valid;
   }
 
   private boolean validatePowerBased(final StandardOffRoadMobileSource subSource) {
-    boolean valid = true;
-    final String code = subSource.getOffRoadMobileSourceCode();
-    if (!validationHelper.expectsPower(code)) {
-      getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
-      valid = false;
-    }
+    // Power validation has been handled in "usesUMethod" already
+
     // Unused for power based; Set to null
     subSource.setLiterFuelPerYear(null);
     subSource.setLiterAdBluePerYear(null);
-    return valid;
+
+    return validateOffRoadPowerRange(subSource);
   }
 
   private boolean validateFuelBased(final StandardOffRoadMobileSource subSource) {
@@ -105,6 +100,8 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     }
     // Fallback if custom GML is passed with power = 0
     subSource.setPower(null);
+
+    validateOffRoadLiterAdBlue(subSource);
     return valid;
   }
 
@@ -114,7 +111,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     if (validationHelper.expectsPower(code)) {
       final Optional<IntRange> powerRange = validationHelper.getPowerRange(code);
 
-      if (subSource.getPower() != null && subSource.getPower() > 0 && !powerRange.map(range -> range.inRange(subSource.getPower())).orElse(false)) {
+      if (!powerRange.map(range -> range.inRange(subSource.getPower())).orElse(false)) {
         getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_POWER_NOT_WITHIN_RANGE, subSource.getDescription(),
             powerRange.get().toString(), String.valueOf(subSource.getPower())));
         return false;
