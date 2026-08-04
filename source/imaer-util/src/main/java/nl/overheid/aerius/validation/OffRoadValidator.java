@@ -34,7 +34,7 @@ import nl.overheid.aerius.shared.exception.ImaerExceptionReason;
 class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
 
   private enum EmissionMethod {
-    POWER, FUEL, MISSING
+    POWER, FUEL, NOT_REQUIRED, MISSING
   }
 
   private final OffRoadValidationHelper validationHelper;
@@ -72,6 +72,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     final boolean valid = switch (determineEmissionMethod(subSource)) {
       case POWER -> validatePowerBased(subSource);
       case FUEL -> validateFuelBased(subSource);
+      case NOT_REQUIRED -> validateNotRequired(subSource);
       case MISSING -> {
         getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
         yield false;
@@ -84,14 +85,23 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     final String code = subSource.getOffRoadMobileSourceCode();
     final boolean hasPower = subSource.getPower() != null && subSource.getPower() > 0;
     final boolean hasFuel = subSource.getLiterFuelPerYear() != null && subSource.getLiterFuelPerYear() > 0;
-    // A category can accept power or fuel. At least one is mandatory.
+    // A category can accept power, fuel or neither.
     if (hasPower && validationHelper.expectsPower(code)) {
       return EmissionMethod.POWER;
     } else if (hasFuel && validationHelper.expectsLiterFuelPerYear(code)) {
       return EmissionMethod.FUEL;
+    } else if (!validationHelper.expectsPower(code) && !validationHelper.expectsLiterFuelPerYear(code)) {
+      return EmissionMethod.NOT_REQUIRED;
     } else {
       return EmissionMethod.MISSING;
     }
+  }
+
+  private boolean validateNotRequired(final StandardOffRoadMobileSource subSource) {
+    // Category expects neither power nor fuel; clear those inputs.
+    subSource.setPower(null);
+    subSource.setLiterFuelPerYear(null);
+    return validateOffRoadLiterAdBlue(subSource);
   }
 
   private boolean validatePowerBased(final StandardOffRoadMobileSource subSource) {

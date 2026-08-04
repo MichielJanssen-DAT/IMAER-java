@@ -116,8 +116,7 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, 3_000, null);
 
     mockCategory(MockCategory.HOURS);
-    assertValidate(source, 1, 0);
-    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
+    assertNoErrorsOrWarnings(source);
   }
 
   @Test
@@ -125,8 +124,7 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, null, 500);
 
     mockCategory(MockCategory.ADBLUE);
-    assertValidate(source, 1, 0);
-    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
+    assertNoErrorsOrWarnings(source);
   }
 
   @Test
