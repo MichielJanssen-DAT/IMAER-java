@@ -116,7 +116,8 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, 3_000, null);
 
     mockCategory(MockCategory.HOURS);
-    assertNoErrorsOrWarnings(source);
+    assertValidate(source, 1, 0);
+    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
   }
 
   @Test
@@ -124,7 +125,8 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, null, 500);
 
     mockCategory(MockCategory.ADBLUE);
-    assertNoErrorsOrWarnings(source);
+    assertValidate(source, 1, 0);
+    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
   }
 
   @Test
@@ -203,7 +205,7 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, null, null);
 
     mockCategory(MockCategory.POWER, MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
-    assertValidate(source, 3, 0);
+    assertValidate(source, 2, 0);
   }
 
   @Test
@@ -244,8 +246,8 @@ class OffRoadValidatorTest {
   private void mockCategory(final MockCategory... mockCategories) {
     final Set<MockCategory> mockCategoriesSet = Set.of(mockCategories);
     when(validationHelper.isValidOffRoadMobileSourceCode(CODE)).thenReturn(true);
-    when(validationHelper.expectsPower(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.POWER));
     when(validationHelper.expectsOperatingHoursPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.HOURS));
+    lenient().when(validationHelper.expectsPower(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.POWER));
     lenient().when(validationHelper.expectsLiterFuelPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.FUEL));
     lenient().when(validationHelper.expectsLiterAdBluePerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.ADBLUE));
     lenient().when(validationHelper.getMaxAdBlueFuelRatio(CODE)).thenReturn(OptionalDouble.of(0.07));
