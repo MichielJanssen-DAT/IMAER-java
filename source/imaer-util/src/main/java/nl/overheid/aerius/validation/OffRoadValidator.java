@@ -149,7 +149,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     return valid;
   }
 
-private boolean validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
+  private boolean validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
     if (validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode())) {
       if (subSource.getLiterAdBluePerYear() == null) {
