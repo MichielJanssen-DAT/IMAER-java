@@ -83,11 +83,15 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
   private EmissionMethod determineEmissionMethod(final StandardOffRoadMobileSource subSource) {
     final String code = subSource.getOffRoadMobileSourceCode();
     final boolean hasPower = subSource.getPower() != null && subSource.getPower() > 0;
+    final boolean hasFuel = subSource.getLiterFuelPerYear() != null && subSource.getLiterFuelPerYear() > 0;
     // A category can accept power or fuel. At least one is mandatory.
-    if (hasPower) {
-      return validationHelper.expectsPower(code) ? EmissionMethod.POWER : EmissionMethod.MISSING;
+    if (hasPower && validationHelper.expectsPower(code)) {
+      return EmissionMethod.POWER;
+    } else if (hasFuel && validationHelper.expectsLiterFuelPerYear(code)) {
+      return EmissionMethod.FUEL;
+    } else {
+      return EmissionMethod.MISSING;
     }
-    return validationHelper.expectsPower(code) && !validationHelper.expectsLiterFuelPerYear(code) ? EmissionMethod.MISSING : EmissionMethod.FUEL;
   }
 
   private boolean validatePowerBased(final StandardOffRoadMobileSource subSource) {
