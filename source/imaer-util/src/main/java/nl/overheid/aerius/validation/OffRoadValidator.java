@@ -116,7 +116,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     if (!expectsFuel) {
       subSource.setLiterFuelPerYear(null);
     }
-    // Fallback if custom GML is passed with power = 0
+    // Fallback in case custom GML is passed with power = 0
     subSource.setPower(null);
 
     valid = validateOffRoadLiterAdBlue(subSource) && valid;
