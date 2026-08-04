@@ -142,7 +142,7 @@ class OffRoadValidatorTest {
    */
   @ParameterizedTest
   @CsvSource({",", "10_000"})
-  void testSubSourceMissingPower(final Integer fuel) {
+  void testPowerSubSourceMissingPower(final Integer fuel) {
     final OffRoadMobileEmissionSource source = createSource(null, fuel, 3_000, 500);
 
     mockCategory(MockCategory.POWER);
@@ -162,11 +162,20 @@ class OffRoadValidatorTest {
   }
 
   @Test
-  void testSubSourceMissingLiterFuelButPowerSuppliedShouldBeValid() {
-    // Power > 0 makes the source power-based, so the missing-fuel-or-power error should not be thrown.
+  void testSubSourcePowerSuppliedButNotExpectedShouldBeInvalid() {
     final OffRoadMobileEmissionSource source = createSource(200, null, 3_000, 500);
 
     mockCategory(MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
+
+    assertValidate(source, 1, 0);
+    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
+  }
+
+  @Test
+  void testSubSourceFuelSuppliedForPowerAndFuelCategoryShouldBeValid() {
+    final OffRoadMobileEmissionSource source = createSource(null, 10_000, null, null);
+
+    mockCategory(MockCategory.POWER, MockCategory.FUEL);
 
     assertNoErrorsOrWarnings(source);
   }
