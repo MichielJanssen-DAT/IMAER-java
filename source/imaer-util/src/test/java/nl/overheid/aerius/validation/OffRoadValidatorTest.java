@@ -152,7 +152,7 @@ class OffRoadValidatorTest {
   }
 
   @Test
-  void testSubSourceMissingLiterFuel() {
+  void testSubSourceMissingLiterFuelAndPower() {
     final OffRoadMobileEmissionSource source = createSource(null, null, 3_000, 500);
 
     mockCategory(MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
@@ -163,7 +163,7 @@ class OffRoadValidatorTest {
 
   @Test
   void testSubSourceMissingLiterFuelButPowerSuppliedShouldBeValid() {
-    // Power > 0 makes the source power-based, so the missing-fuel error should not be thrown.
+    // Power > 0 makes the source power-based, so the missing-fuel-or-power error should not be thrown.
     final OffRoadMobileEmissionSource source = createSource(200, null, 3_000, 500);
 
     mockCategory(MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
