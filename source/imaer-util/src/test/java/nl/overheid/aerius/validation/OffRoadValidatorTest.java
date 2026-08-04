@@ -142,10 +142,20 @@ class OffRoadValidatorTest {
    */
   @ParameterizedTest
   @CsvSource({",", "10_000"})
-  void testSubSourceMissingPower(final Integer fuel) {
+  void testPowerSubSourceMissingPower(final Integer fuel) {
     final OffRoadMobileEmissionSource source = createSource(null, fuel, 3_000, 500);
 
     mockCategory(MockCategory.POWER);
+
+    assertValidate(source, 1, 0);
+    assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
+  }
+
+  @Test
+  void testSubSourceMissingLiterFuelAndPower() {
+    final OffRoadMobileEmissionSource source = createSource(null, null, 3_000, 500);
+
+    mockCategory(MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
 
     assertValidate(source, 1, 0);
     assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
@@ -165,6 +175,15 @@ class OffRoadValidatorTest {
 
     assertValidate(source, 1, 0);
     assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
+  }
+
+  @Test
+  void testSubSourceFuelSuppliedForPowerAndFuelCategoryShouldBeValid() {
+    final OffRoadMobileEmissionSource source = createSource(null, 10_000, null, null);
+
+    mockCategory(MockCategory.POWER, MockCategory.FUEL);
+
+    assertNoErrorsOrWarnings(source);
   }
 
   @Test
@@ -190,7 +209,9 @@ class OffRoadValidatorTest {
     final OffRoadMobileEmissionSource source = createSource(null, null, null, null);
 
     mockCategory(MockCategory.POWER, MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
-    assertValidate(source, 3, 0);
+    assertValidate(source, 2, 0);
+    assertAeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION), errors.get(0));
+    assertAeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_OPERATING_HOURS, List.of(SUB_SOURCE_DESCRIPTION), errors.get(1));
   }
 
   @Test
@@ -202,6 +223,15 @@ class OffRoadValidatorTest {
     assertValidate(source, 0, 1);
     assertAeriusException(ImaerExceptionReason.MOBILE_SOURCE_HIGH_ADBLUE_FUEL_RATIO, List.of(SUB_SOURCE_DESCRIPTION, "700.00", "1000"),
         warnings.get(0));
+  }
+
+  @Test
+  void testValidPowerBasedSubSourceShouldNotRequireAdBlue() {
+    when(validationHelper.getPowerRange(any())).thenReturn(Optional.of(IntRangeUtil.valueOf("[67,420]")));
+    final OffRoadMobileEmissionSource source = createSource(200, null, 1_337, null);
+
+    mockCategory(MockCategory.POWER, MockCategory.HOURS, MockCategory.ADBLUE);
+    assertNoErrorsOrWarnings(source);
   }
 
   private static OffRoadMobileEmissionSource createSource(final Integer power, final Integer fuel, final Integer hours, final Integer adBlue) {
@@ -222,10 +252,10 @@ class OffRoadValidatorTest {
   private void mockCategory(final MockCategory... mockCategories) {
     final Set<MockCategory> mockCategoriesSet = Set.of(mockCategories);
     when(validationHelper.isValidOffRoadMobileSourceCode(CODE)).thenReturn(true);
-    when(validationHelper.expectsPower(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.POWER));
-    when(validationHelper.expectsLiterFuelPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.FUEL));
     when(validationHelper.expectsOperatingHoursPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.HOURS));
-    when(validationHelper.expectsLiterAdBluePerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.ADBLUE));
+    lenient().when(validationHelper.expectsPower(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.POWER));
+    lenient().when(validationHelper.expectsLiterFuelPerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.FUEL));
+    lenient().when(validationHelper.expectsLiterAdBluePerYear(CODE)).thenReturn(mockCategoriesSet.contains(MockCategory.ADBLUE));
     lenient().when(validationHelper.getMaxAdBlueFuelRatio(CODE)).thenReturn(OptionalDouble.of(0.07));
   }
 

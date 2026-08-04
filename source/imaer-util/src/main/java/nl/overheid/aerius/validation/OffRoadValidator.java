@@ -33,6 +33,10 @@ import nl.overheid.aerius.shared.exception.ImaerExceptionReason;
  */
 class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
 
+  private enum EmissionMethod {
+    POWER, FUEL, NOT_REQUIRED, MISSING
+  }
+
   private final OffRoadValidationHelper validationHelper;
 
   OffRoadValidator(final List<AeriusException> errors, final List<AeriusException> warnings, final OffRoadValidationHelper validationHelper) {
@@ -65,30 +69,67 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
 
   private boolean validateOffRoadProperties(final StandardOffRoadMobileSource subSource) {
     // Combine all validations in separate statements to make sure each validation is run to collect all validation warnings/errors.
-    boolean valid = validatePowerOrLiterFuel(subSource);
-    valid = validateOffRoadPowerRange(subSource) && valid;
-    valid = validateOffRoadOperatingHours(subSource) && valid;
-    return validateOffRoadLiterAdBlue(subSource) && valid;
+    final boolean valid = switch (determineEmissionMethod(subSource)) {
+      case POWER -> validatePowerBased(subSource);
+      case FUEL -> validateFuelBased(subSource);
+      case NOT_REQUIRED -> validateNotRequired(subSource);
+      case MISSING -> {
+        getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
+        yield false;
+      }
+    };
+    return validateOffRoadOperatingHours(subSource) && valid;
   }
 
-  private boolean validatePowerOrLiterFuel(final StandardOffRoadMobileSource subSource) {
+  private EmissionMethod determineEmissionMethod(final StandardOffRoadMobileSource subSource) {
+    final String code = subSource.getOffRoadMobileSourceCode();
+    final boolean hasPower = subSource.getPower() != null && subSource.getPower() > 0;
+    final boolean hasFuel = subSource.getLiterFuelPerYear() != null && subSource.getLiterFuelPerYear() > 0;
+    // A category can accept power, fuel or neither.
+    if (hasPower && validationHelper.expectsPower(code)) {
+      return EmissionMethod.POWER;
+    } else if (hasFuel && validationHelper.expectsLiterFuelPerYear(code)) {
+      return EmissionMethod.FUEL;
+    } else if (!validationHelper.expectsPower(code) && !validationHelper.expectsLiterFuelPerYear(code)) {
+      return EmissionMethod.NOT_REQUIRED;
+    } else {
+      return EmissionMethod.MISSING;
+    }
+  }
+
+  private boolean validateNotRequired(final StandardOffRoadMobileSource subSource) {
+    // Category expects neither power nor fuel; clear those inputs.
+    subSource.setPower(null);
+    subSource.setLiterFuelPerYear(null);
+    return validateOffRoadLiterAdBlue(subSource);
+  }
+
+  private boolean validatePowerBased(final StandardOffRoadMobileSource subSource) {
+    // Power "!= null && > 0" checks have been handled in determineEmissionMethod already
+
+    // Unused for power based; Set to null
+    subSource.setLiterFuelPerYear(null);
+    subSource.setLiterAdBluePerYear(null);
+
+    return validateOffRoadPowerRange(subSource);
+  }
+
+  private boolean validateFuelBased(final StandardOffRoadMobileSource subSource) {
     boolean valid = true;
     final String code = subSource.getOffRoadMobileSourceCode();
-    final boolean expectsPower = validationHelper.expectsPower(code);
     final boolean expectsFuel = validationHelper.expectsLiterFuelPerYear(code);
-    final boolean noPowerButExpected = expectsPower && subSource.getPower() == null;
-    final boolean noFuelButExpected = expectsFuel && subSource.getLiterFuelPerYear() == null;
 
-    if ((noPowerButExpected && noFuelButExpected) || (noPowerButExpected && !expectsFuel) || (noFuelButExpected && !expectsPower)) {
+    if (expectsFuel && subSource.getLiterFuelPerYear() == null) {
       getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, subSource.getDescription()));
       valid = false;
-    }
-    if (!expectsPower) {
-      subSource.setPower(null);
     }
     if (!expectsFuel) {
       subSource.setLiterFuelPerYear(null);
     }
+    // Fallback in case custom GML is passed with power = 0
+    subSource.setPower(null);
+
+    valid = validateOffRoadLiterAdBlue(subSource) && valid;
     return valid;
   }
 
@@ -98,7 +139,7 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     if (validationHelper.expectsPower(code)) {
       final Optional<IntRange> powerRange = validationHelper.getPowerRange(code);
 
-      if (subSource.getPower() != null && subSource.getPower() > 0 && !powerRange.map(range -> range.inRange(subSource.getPower())).orElse(false)) {
+      if (!powerRange.map(range -> range.inRange(subSource.getPower())).orElse(false)) {
         getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_POWER_NOT_WITHIN_RANGE, subSource.getDescription(),
             powerRange.get().toString(), String.valueOf(subSource.getPower())));
         return false;
