@@ -161,9 +161,15 @@ class OffRoadValidatorTest {
     assertFirstError(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION));
   }
 
-  @Test
-  void testSubSourcePowerSuppliedButNotExpectedShouldBeInvalid() {
-    final OffRoadMobileEmissionSource source = createSource(200, null, 3_000, 500);
+  /**
+   * Test if correct error is given when fuel value is missing.
+   *
+   * @param power Test both with and without power value, should have the same results as no emission factors for power present
+   */
+  @ParameterizedTest
+  @CsvSource({",", "200"})
+  void testSubSourceMissingLiterFuel(final Integer power) {
+    final OffRoadMobileEmissionSource source = createSource(power, null, 3_000, 500);
 
     mockCategory(MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
 
