@@ -210,6 +210,8 @@ class OffRoadValidatorTest {
 
     mockCategory(MockCategory.POWER, MockCategory.FUEL, MockCategory.HOURS, MockCategory.ADBLUE);
     assertValidate(source, 2, 0);
+    assertAeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_POWER_OR_LITER_FUEL, List.of(SUB_SOURCE_DESCRIPTION), errors.get(0));
+    assertAeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_OPERATING_HOURS, List.of(SUB_SOURCE_DESCRIPTION), errors.get(1));
   }
 
   @Test
