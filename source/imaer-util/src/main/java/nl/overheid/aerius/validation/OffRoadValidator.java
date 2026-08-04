@@ -116,14 +116,10 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     if (!expectsFuel) {
       subSource.setLiterFuelPerYear(null);
     }
-    if (validationHelper.expectsLiterAdBluePerYear(code) && subSource.getLiterAdBluePerYear() == null) {
-      getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
-      valid = false;
-    }
     // Fallback if custom GML is passed with power = 0
     subSource.setPower(null);
 
-    validateOffRoadLiterAdBlue(subSource);
+    valid = validateOffRoadLiterAdBlue(subSource) && valid;
     return valid;
   }
 
@@ -153,14 +149,19 @@ class OffRoadValidator extends SourceValidator<OffRoadMobileEmissionSource> {
     return valid;
   }
 
-  private void validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
-    // No need for null check, as validateFuelBased() handles that if required
-    if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
+private boolean validateOffRoadLiterAdBlue(final StandardOffRoadMobileSource subSource) {
+    boolean valid = true;
+    if (validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode())) {
+      if (subSource.getLiterAdBluePerYear() == null) {
+        getErrors().add(new AeriusException(ImaerExceptionReason.MOBILE_SOURCE_MISSING_LITER_ADBLUE, subSource.getDescription()));
+        valid = false;
+      } else if (subSource.getLiterFuelPerYear() != null) {
+        validateAdBlueFuelRatio(subSource);
+      }
+    } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterAdBluePerYear() == 0) {
       subSource.setLiterAdBluePerYear(null);
-    } else if (subSource.getLiterAdBluePerYear() != null && subSource.getLiterFuelPerYear() != null
-        && validationHelper.expectsLiterAdBluePerYear(subSource.getOffRoadMobileSourceCode())) {
-      validateAdBlueFuelRatio(subSource);
     }
+    return valid;
   }
 
   private void validateAdBlueFuelRatio(final StandardOffRoadMobileSource subSource) {
