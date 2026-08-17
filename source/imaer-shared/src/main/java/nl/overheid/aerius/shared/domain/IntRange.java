@@ -16,8 +16,6 @@
  */
 package nl.overheid.aerius.shared.domain;
 
-import java.util.function.Function;
-
 /**
  * Object to use to check if a given value is within a range.
  * The range object can be created using a string representation of the range. like [1,10).
@@ -31,12 +29,14 @@ public record IntRange(int low, boolean lowInclusive, int high,  boolean highInc
 
   @Override
   public String toString() {
-     final Function<Boolean, String> same = b -> b ? "=" : "";
-     final boolean withLow = low != Integer.MIN_VALUE;
-     final boolean withHigh = high != Integer.MAX_VALUE;
-
-    return (withLow ?  ('>'  + same.apply(lowInclusive) + low) : "")
-         + (withLow && withHigh ? " - " : "")
-         + (withHigh ?  ('<'  + same.apply(highInclusive) + high) : "");
+    if (low == Integer.MIN_VALUE) {
+      return "<" + (highInclusive ? "= " : " ") + high;
+    } else if (high == Integer.MAX_VALUE) {
+      return ">" + (lowInclusive ? "= " : " ") + low;
+    } else {
+      final String lowBracket = lowInclusive ? "[" : "(";
+      final String highBracket = highInclusive ? "]" : ")";
+      return lowBracket + low + "-" + high + highBracket;
+    }
   }
 }
