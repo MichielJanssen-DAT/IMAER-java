@@ -88,12 +88,12 @@ class IntRangeTest {
   static List<Arguments> toStringData() {
     return List.of(
         Arguments.of("[,20)", "< 20"),
-        Arguments.of("[,20]", "<= 20"),
+        Arguments.of("[,20]", "≤ 20"),
         Arguments.of("[10,20]", "[10-20]"),
         Arguments.of("(10,20]", "(10-20]"),
         Arguments.of("(10,20)", "(10-20)"),
         Arguments.of("[10,20)", "[10-20)"),
-        Arguments.of("[10,)", ">= 10"),
+        Arguments.of("[10,)", "≥ 10"),
         Arguments.of("(10,)", "> 10"));
   }
 }

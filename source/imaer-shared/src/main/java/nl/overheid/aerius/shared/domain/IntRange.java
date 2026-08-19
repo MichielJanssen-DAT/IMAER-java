@@ -30,9 +30,9 @@ public record IntRange(int low, boolean lowInclusive, int high,  boolean highInc
   @Override
   public String toString() {
     if (low == Integer.MIN_VALUE) {
-      return "<" + (highInclusive ? "= " : " ") + high;
+      return (highInclusive ? "≤ " : "< ") + high;
     } else if (high == Integer.MAX_VALUE) {
-      return ">" + (lowInclusive ? "= " : " ") + low;
+      return (lowInclusive ? "≥ " : "> ") + low;
     } else {
       final String lowBracket = lowInclusive ? "[" : "(";
       final String highBracket = highInclusive ? "]" : ")";
